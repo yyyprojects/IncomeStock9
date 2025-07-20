@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to Income Stocks</title>
+    <!-- Chosen Palette: Warm and Welcoming (#F5F3F0, #D4CFC9, #4D4944, #A99985) -->
+    <!-- Application Structure Plan: A single-page application with a sticky top navigation bar (Overview, Compare, Explore, Risks & Fit) for easy jumping between thematic sections. This structure replaces a linear scroll, allowing users to non-linearly explore concepts based on their interest. The flow guides the user from the basic definition to comparison, practical examples (sectors), and finally considerations (risks), creating a comprehensive learning path. Key interactions include toggling between investment strategies, dynamically updating charts to compare against different benchmarks, and linking chart elements to detailed textual explanations to foster active exploration. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Core concept of Income vs. Growth investing. -> Goal: Compare/Organize. -> Viz/Method: HTML/CSS diagram with JS toggle. -> Interaction: User clicks toggle to switch views, updating text and styling. -> Justification: More engaging than a static flowchart, directly shows contrast. -> Method: Vanilla JS DOM manipulation.
+        - Report Info: Dividend Yield comparison. -> Goal: Compare. -> Viz/Method: Interactive Bar Chart. -> Interaction: Button adds/removes a dataset (e.g., Treasury Bond) to the chart. -> Justification: Allows users to see how income stocks stack up against different asset classes, providing deeper context. -> Library: Chart.js (Canvas).
+        - Report Info: Common sectors for income stocks. -> Goal: Organize/Explore. -> Viz/Method: Donut Chart linked to info cards. -> Interaction: Clicking a chart slice highlights and scrolls to a detailed description card. -> Justification: Connects a high-level overview (the chart) with detailed information, encouraging drill-down. -> Library: Chart.js (Canvas) + Vanilla JS.
+        - Report Info: Risks and investor profiles. -> Goal: Inform. -> Viz/Method: Styled HTML/Tailwind content cards in a grid layout. -> Interaction: Clear information architecture, no complex interaction needed. -> Justification: Presents key takeaways in a digestible, scannable format. -> Method: HTML/Tailwind.
+        -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F3F0;
+            color: #4D4944;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+                max-height: 450px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-color 0.3s ease;
+            border-bottom-width: 2px;
+            border-color: transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #A99985;
+            border-color: #A99985;
+        }
+        .section-card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+            border: 1px solid #D4CFC9;
+        }
+        .interactive-toggle-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #D4CFC9;
+        }
+        .interactive-toggle-btn.active {
+            background-color: #4D4944;
+            color: #F5F3F0;
+            border-color: #4D4944;
+        }
+        .highlight-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: scale(1.03);
+            box-shadow: 0 10px 15px -3px rgba(169, 153, 133, 0.2), 0 4px 6px -2px rgba(169, 153, 133, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm border-b border-gray-200">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#overview" class="text-xl font-bold text-gray-800">Income Stocks 101</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 text-sm font-medium">Overview</a>
+                        <a href="#compare" class="nav-link px-3 py-2 text-sm font-medium">Compare</a>
+                        <a href="#sectors" class="nav-link px-3 py-2 text-sm font-medium">Explore Sectors</a>
+                        <a href="#risks" class="nav-link px-3 py-2 text-sm font-medium">Risks & Fit</a>
+                    </div>
+                </div>
+                 <div class="md:hidden">
+                    <select id="mobile-nav" class="bg-gray-200 border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5">
+                        <option value="#overview">Overview</option>
+                        <option value="#compare">Compare</option>
+                        <option value="#sectors">Explore Sectors</option>
+                        <option value="#risks">Risks & Fit</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="overview" class="pt-20 -mt-16">
+            <div class="section-card">
+                <h2 class="text-3xl font-bold text-center mb-4">What is an Income Stock?</h2>
+                <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-8">An income stock is a share in a stable, established company that pays out a portion of its profits to shareholders on a regular basis. This payment is called a dividend. This section introduces the core idea and contrasts it with a growth-focused strategy.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <div class="flex justify-center mb-4">
+                            <div class="inline-flex rounded-full bg-gray-100 p-1">
+                                <button id="incomeToggle" class="interactive-toggle-btn active">Income Focus</button>
+                                <button id="growthToggle" class="interactive-toggle-btn">Growth Focus</button>
+                            </div>
+                        </div>
+                        <div id="strategy-diagram" class="border-2 rounded-lg p-6 transition-all duration-300">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                         <div class="bg-gray-50 p-6 rounded-lg">
+                            <div class="text-6xl font-bold" style="color: #A99985;">3%-6%</div>
+                            <div class="text-xl font-semibold mt-2">Typical Annual Dividend Yield</div>
+                            <p class="mt-2 text-gray-600">This is the cash return an investor might expect from dividends alone, separate from any change in the stock's price.</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="compare" class="pt-20 -mt-16">
+            <div class="section-card">
+                <h2 class="text-3xl font-bold text-center mb-4">How Do Income Stocks Compare?</h2>
+                <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-8">The appeal of income stocks lies in their dividend yield. This chart compares the typical yield of an income stock to other common investments. Use the button to see how they stack up against a low-risk government bond, a key benchmark for income investors.</p>
+                <div class="text-center mb-6">
+                    <button id="toggleBondData" class="bg-[#A99985] text-white font-bold py-2 px-4 rounded-full hover:bg-[#4D4944] transition-colors">
+                        Show 10-Year Treasury Bond
+                    </button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="yieldComparisonChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="sectors" class="pt-20 -mt-16">
+            <div class="section-card">
+                <h2 class="text-3xl font-bold text-center mb-4">Explore Common Sectors</h2>
+                <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-8">Income stocks are typically found in mature, stable industries with predictable cash flows. Click on a slice of the chart below to learn more about why that sector is a common home for dividend-paying companies.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="chart-container h-[300px] md:h-auto">
+                        <canvas id="sectorDonutChart"></canvas>
+                    </div>
+                    <div id="sector-details" class="space-y-4">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="pt-20 -mt-16">
+            <div class="section-card">
+                <h2 class="text-3xl font-bold text-center mb-4">Risks & Investor Fit</h2>
+                <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-8">While often considered safer, income stocks are not without risk. It's crucial to understand the potential downsides and determine if this strategy aligns with your personal financial goals.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+                        <h3 class="font-bold text-red-800">Interest Rate Risk</h3>
+                        <p class="text-sm text-gray-700">When interest rates on safer assets (like bonds) rise, income stocks may become less attractive, potentially causing their price to fall.</p>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+                        <h3 class="font-bold text-red-800">Dividend Cuts</h3>
+                        <p class="text-sm text-gray-700">In tough economic times, companies might reduce or eliminate dividends to preserve cash, which usually leads to a sharp stock price decline.</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                        <h3 class="font-bold text-yellow-800">Slow Growth Potential</h3>
+                        <p class="text-sm text-gray-700">These are mature companies. You're trading the potential for rapid growth for the stability of regular income.</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                        <h3 class="font-bold text-yellow-800">Inflation Risk</h3>
+                        <p class="text-sm text-gray-700">If inflation is higher than your dividend yield, the purchasing power of your income is actually decreasing over time.</p>
+                    </div>
+                </div>
+                <div class="mt-8 bg-gray-50 p-6 rounded-lg">
+                    <h3 class="text-2xl font-bold text-center mb-4">Is This Strategy for You?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div>
+                             <div class="text-4xl">🧑‍🦳</div>
+                            <h4 class="font-bold mt-2">Retirees</h4>
+                            <p class="text-sm text-gray-600">Seeking to supplement income without selling assets.</p>
+                        </div>
+                        <div>
+                             <div class="text-4xl">🛡️</div>
+                            <h4 class="font-bold mt-2">Conservative Investors</h4>
+                            <p class="text-sm text-gray-600">Who prioritize stability and lower volatility.</p>
+                        </div>
+                        <div>
+                             <div class="text-4xl">💸</div>
+                            <h4 class="font-bold mt-2">Income Seekers</h4>
+                            <p class="text-sm text-gray-600">Anyone wanting to add a passive income stream.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 mt-4 border-t border-gray-200">
+        <p class="text-gray-500 text-sm">This interactive guide is for educational purposes only. All data is illustrative.</p>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const palette = {
+            primary: '#A99985',
+            secondary: '#D4CFC9',
+            text: '#4D4944',
+            accent: '#A99985',
+            bg: '#F5F3F0'
+        };
+
+        const defaultTooltipCallback = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: (tooltipItems) => {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            return Array.isArray(label) ? label.join(' ') : label;
+                        }
+                    }
+                }
+            }
+        };
+        
+        const processLabels = (labels) => {
+            const maxLen = 16;
+            return labels.map(label => {
+                if (typeof label !== 'string' || label.length <= maxLen) return label;
+                const words = label.split(' ');
+                let lines = [];
+                let currentLine = '';
+                for (const word of words) {
+                    if ((currentLine + ' ' + word).trim().length > maxLen) {
+                        lines.push(currentLine.trim());
+                        currentLine = word;
+                    } else {
+                        currentLine = (currentLine + ' ' + word).trim();
+                    }
+                }
+                if (currentLine) lines.push(currentLine.trim());
+                return lines;
+            });
+        };
+
+        const incomeStrategy = {
+            title: 'Income Investing Flow',
+            borderColor: 'border-green-500',
+            steps: [
+                { icon: '🏢', text: 'Invest in a mature, stable company.' },
+                { icon: '➡️', text: 'Company shares a portion of its profits.' },
+                { icon: '💰', text: 'You receive a regular cash dividend.' },
+                { icon: '🎯', text: 'Goal: A steady, predictable income stream.' }
+            ]
+        };
+
+        const growthStrategy = {
+            title: 'Growth Investing Flow',
+            borderColor: 'border-blue-500',
+            steps: [
+                { icon: '🚀', text: 'Invest in a younger, expanding company.' },
+                { icon: '➡️', text: 'Company reinvests all profits into growth.' },
+                { icon: '📈', text: 'You receive no dividend; value stays in company.' },
+                { icon: '🎯', text: 'Goal: Maximize long-term stock price growth.' }
+            ]
+        };
+
+        const strategyContainer = document.getElementById('strategy-diagram');
+        const incomeToggle = document.getElementById('incomeToggle');
+        const growthToggle = document.getElementById('growthToggle');
+
+        function updateStrategyView(strategy) {
+            strategyContainer.innerHTML = `
+                <h3 class="text-xl font-bold text-center mb-4">${strategy.title}</h3>
+                <div class="space-y-2">
+                    ${strategy.steps.map(step => `
+                        <div class="flex items-center p-2 bg-gray-50 rounded">
+                            <span class="text-2xl mr-4">${step.icon}</span>
+                            <span>${step.text}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            strategyContainer.className = `border-2 rounded-lg p-6 transition-all duration-300 ${strategy.borderColor}`;
+        }
+
+        incomeToggle.addEventListener('click', () => {
+            updateStrategyView(incomeStrategy);
+            incomeToggle.classList.add('active');
+            growthToggle.classList.remove('active');
+        });
+
+        growthToggle.addEventListener('click', () => {
+            updateStrategyView(growthStrategy);
+            growthToggle.classList.add('active');
+            incomeToggle.classList.remove('active');
+        });
+        
+        updateStrategyView(incomeStrategy);
+
+        let yieldChart;
+        const yieldChartCanvas = document.getElementById('yieldComparisonChart');
+        const toggleBondBtn = document.getElementById('toggleBondData');
+        let bondDataVisible = false;
+
+        const yieldChartData = {
+            labels: ['Typical Income Stock', 'S&P 500 Average', 'Typical Growth Stock'],
+            datasets: [
+                {
+                    label: 'Annual Dividend Yield',
+                    data: [4.5, 1.5, 0.1],
+                    backgroundColor: [palette.accent, palette.secondary, '#E5E7EB'],
+                    borderColor: palette.text,
+                    borderWidth: 1
+                }
+            ]
+        };
+        
+        const bondDataset = {
+            label: '10-Year Treasury Bond',
+            data: [null, null, null, 3.8],
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        };
+
+
+        if (yieldChartCanvas) {
+            yieldChart = new Chart(yieldChartCanvas, {
+                type: 'bar',
+                data: yieldChartData,
+                options: {
+                    ...defaultTooltipCallback,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { callback: value => value + '%' },
+                            title: { display: true, text: 'Annual Yield' }
+                        }
+                    },
+                    plugins: {
+                        ...defaultTooltipCallback.plugins,
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+        
+        toggleBondBtn.addEventListener('click', () => {
+            bondDataVisible = !bondDataVisible;
+            if (bondDataVisible) {
+                yieldChart.config.data.labels.push('10-Year Treasury Bond');
+                yieldChart.config.data.datasets[0].data.push(3.8);
+                toggleBondBtn.textContent = 'Hide 10-Year Treasury Bond';
+                 yieldChart.config.data.datasets[0].backgroundColor.push('#4FD1C5');
+            } else {
+                 yieldChart.config.data.labels.pop();
+                 yieldChart.config.data.datasets[0].data.pop();
+                 yieldChart.config.data.datasets[0].backgroundColor.pop();
+                 toggleBondBtn.textContent = 'Show 10-Year Treasury Bond';
+            }
+            yieldChart.update();
+        });
+
+
+        const sectorData = [
+            { name: 'Utilities', description: 'Provides essential services like electricity and water. Revenues are highly stable and predictable, making it easy for companies to commit to regular dividend payments.' },
+            { name: 'Consumer Staples', description: 'Sells everyday necessities like food and cleaning supplies. Demand remains constant regardless of the economic climate, ensuring consistent cash flow for dividends.' },
+            { name: 'Real Estate (REITs)', description: 'Companies that own and operate income-producing real estate. They are legally required to distribute at least 90% of their taxable income to shareholders as dividends.' },
+            { name: 'Telecommunications', description: 'Major phone and internet providers benefit from a large base of subscribers on monthly contracts, creating a reliable revenue stream to support dividends.' },
+            { name: 'Healthcare', description: 'Large, established pharmaceutical and medical device companies with patented drugs and essential products have strong, defensible cash flows ideal for paying dividends.' },
+        ];
+        
+        const sectorDetailsContainer = document.getElementById('sector-details');
+        sectorData.forEach((sector, index) => {
+             const card = document.createElement('div');
+             card.id = `sector-card-${index}`;
+             card.className = 'p-4 rounded-lg border border-gray-200 transition-all duration-300';
+             card.innerHTML = `<h4 class="font-bold text-lg">${sector.name}</h4><p class="text-sm text-gray-600">${sector.description}</p>`;
+             sectorDetailsContainer.appendChild(card);
+        });
+
+        const sectorChartCanvas = document.getElementById('sectorDonutChart');
+        let sectorChart;
+        if (sectorChartCanvas) {
+            sectorChart = new Chart(sectorChartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: sectorData.map(s => s.name),
+                    datasets: [{
+                        data: [25, 20, 20, 15, 20],
+                        backgroundColor: [palette.primary, '#BDB3A6', palette.text, '#C1B9AE', palette.secondary],
+                        hoverOffset: 8,
+                        borderColor: palette.bg,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    ...defaultTooltipCallback,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const cardToHighlight = document.getElementById(`sector-card-${index}`);
+                            document.querySelectorAll('#sector-details > div').forEach(c => c.classList.remove('highlight-card'));
+                            cardToHighlight.classList.add('highlight-card');
+                            cardToHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    },
+                    plugins: {
+                        ...defaultTooltipCallback.plugins,
+                        legend: { display: true, position: 'bottom' },
+                    }
+                }
+            });
+        }
+        
+        const sections = document.querySelectorAll('main section');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const header = document.getElementById('header');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                    });
+                }
+            });
+        }, { rootMargin: `-${header.offsetHeight}px 0px 0px 0px`, threshold: 0.4 });
+
+        sections.forEach(section => observer.observe(section));
+
+        const mobileNav = document.getElementById('mobile-nav');
+        mobileNav.addEventListener('change', (e) => {
+            window.location.hash = e.target.value;
+        });
+
+    });
+    </script>
+</body>
+</html>
+```
